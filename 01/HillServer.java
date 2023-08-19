@@ -9,14 +9,12 @@ public class HillServer {
         Socket s = ss.accept();
         PrintWriter out = new PrintWriter(s.getOutputStream(), true);
         BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
-        String ipStr = "", opStr = "";
+        String ipStr = "";
         while (!ipStr.equals("stop")) {
             ipStr = in.readLine();
-            System.out.println("Message from client\t-->" + ipStr);
-            System.out.println("Decrypted message: " + HillCipher(ipStr, "GYBNQKURP"));
-            System.out.print(">>>");
-            opStr = sc.nextLine();
-            out.println(opStr);
+            int stringLength = Integer.parseInt(in.readLine());
+            System.out.println("Message from client: " + ipStr);
+            System.out.println("Decrypted message: \t" + HillCipher(ipStr, "GYBNQKURP").substring(0, stringLength));
         }
         in.close();
         out.close();
@@ -53,17 +51,10 @@ public class HillServer {
 
     static void getCofactor(int A[][], int temp[][], int p, int q, int n) {
         int i = 0, j = 0;
-
-        // Looping for each element of the matrix
         for (int row = 0; row < n; row++) {
             for (int col = 0; col < n; col++) {
-                // Copying into temporary matrix only those element
-                // which are not in given row and column
                 if (row != p && col != q) {
                     temp[i][j++] = A[row][col];
-
-                    // Row is filled, so increase row index and
-                    // reset col index
                     if (j == n - 1) {
                         j = 0;
                         i++;
@@ -74,23 +65,18 @@ public class HillServer {
     }
 
     static int determinant(int A[][], int n) {
-        int D = 0; // Initialize result
+        int D = 0;
 
-        // Base case : if matrix contains single element
         if (n == 1)
             return A[0][0];
 
-        int[][] temp = new int[3][3]; // To store cofactors
+        int[][] temp = new int[3][3];
 
-        int sign = 1; // To store sign multiplier
+        int sign = 1;
 
-        // Iterate for each element of first row
         for (int f = 0; f < n; f++) {
-            // Getting Cofactor of A[0][f]
             getCofactor(A, temp, 0, f, n);
             D += sign * A[0][f] * determinant(temp, n - 1);
-
-            // terms are to be added with alternate sign
             sign = -sign;
         }
 
@@ -98,21 +84,13 @@ public class HillServer {
     }
 
     static void adjoint(int A[][], int[][] adj) {
-        // temp is used to store cofactors of A[][]
         int sign = 1;
         int[][] temp = new int[3][3];
 
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                // Get cofactor of A[i][j]
                 getCofactor(A, temp, i, j, 3);
-
-                // sign of adj[j][i] positive if sum of row
-                // and column indexes is even.
                 sign = ((i + j) % 2 == 0) ? 1 : -1;
-
-                // Interchanging rows and columns to get the
-                // transpose of the cofactor matrix
                 adj[j][i] = (sign) * (determinant(temp, 3 - 1));
             }
         }
@@ -139,27 +117,35 @@ public class HillServer {
             }
         }
 
-        int[][] cipherMatrix = new int[3][1];
+        int blockSize = 3;
+        int no_of_blocks = message.length() / blockSize;
+        if(message.length() % 3 > 0) no_of_blocks++;
 
-        // Generate vector for the message
-        for (int i = 0; i < 3; i++)
-            cipherMatrix[i][0] = (message.charAt(i)) % 65;
+        int[][][] cipherMatrix = new int[no_of_blocks][3][1];
 
-        int[][] ptMatrix = new int[3][1];
+        StringBuilder plainText = new StringBuilder();
 
-        decrypt(ptMatrix, inverseMatrix, cipherMatrix);
+        for(int block=0;block<no_of_blocks;block++) {
+            for (int i = 0; i < blockSize; i++) {
+                int curIndex = i + block * blockSize;
+                int c;
+                if(curIndex < message.length())
+                    c = (message.charAt(curIndex)) % 65;
+                else
+                    c = ' ';
+                cipherMatrix[block][i][0] = c;
+            }
 
-        for(int i=0;i<ptMatrix.length;i++)
-            ptMatrix[i][0] %= 26;
+            int[][] ptMatrix = new int[3][1];
 
-        String plainText = "";
+            decrypt(ptMatrix, inverseMatrix, cipherMatrix[block]);
 
-        // Generate the encrypted text from
-        // the encrypted vector
-        for (int i = 0; i < 3; i++)
-            plainText += (char) (ptMatrix[i][0] + 65);
-        
-        return plainText;
+            for (int i = 0; i < ptMatrix.length; i++)
+                ptMatrix[i][0] %= 26;
+
+            for (int i = 0; i < 3; i++)
+                plainText.append((char) (ptMatrix[i][0] + 65));
+        }
+        return plainText.toString();
     }
-
 }

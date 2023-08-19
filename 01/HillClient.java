@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.*;
+import java.util.Arrays;
 import java.util.Scanner;
 
 public class HillClient {
@@ -14,8 +15,7 @@ public class HillClient {
             System.out.print(">>>");
             opStr = sc.nextLine();
             out.println(HillCipher(opStr, "GYBNQKURP"));
-            ipStr = in.readLine();
-            System.out.println("Message from server-->" + ipStr);
+            out.println(opStr.length());
         }
         s.close();
         sc.close();
@@ -43,7 +43,6 @@ public class HillClient {
                 for (x = 0; x < 3; x++) {
                     cipherMatrix[i][j] += keyMatrix[i][x] * messageVector[x][j];
                 }
-
                 cipherMatrix[i][j] = cipherMatrix[i][j] % 26;
             }
         }
@@ -51,29 +50,37 @@ public class HillClient {
 
     // Function to implement Hill Cipher
     static String HillCipher(String message, String key) {
-        // Get key matrix from the key string
         int[][] keyMatrix = new int[3][3];
         getKeyMatrix(key, keyMatrix);
 
-        int[][] messageVector = new int[3][1];
+        int blockSize = 3;
+        int no_of_blocks = message.length() / blockSize;
+        if(message.length() % 3 > 0) no_of_blocks++;
 
-        // Generate vector for the message
-        for (int i = 0; i < 3; i++)
-            messageVector[i][0] = (message.charAt(i)) % 65;
+        int[][][] messageVector = new int[no_of_blocks][3][1];
+
+        for(int block=0;block<no_of_blocks;block++){
+            for (int i = 0; i < blockSize; i++) {
+                int curIndex = i + block * blockSize;
+                int c;
+                if(curIndex < message.length())
+                    c = (message.charAt(curIndex)) % 65;
+                else
+                    c = '/';
+                messageVector[block][i][0] = c;
+            }
+        }
 
         int[][] cipherMatrix = new int[3][1];
 
-        // Following function generates
-        // the encrypted vector
-        encrypt(cipherMatrix, keyMatrix, messageVector);
+        StringBuilder res = new StringBuilder();
 
-        String CipherText = "";
+        for(int i=0;i<no_of_blocks;i++) {
+            encrypt(cipherMatrix, keyMatrix, messageVector[i]);
+            for (int j = 0; j < 3; j++)
+                res.append((char) (cipherMatrix[j][0] + 65));
+        }
 
-        // Generate the encrypted text from
-        // the encrypted vector
-        for (int i = 0; i < 3; i++)
-            CipherText += (char) (cipherMatrix[i][0] + 65);
-
-        return CipherText;
+        return res.toString();
     }
 }
