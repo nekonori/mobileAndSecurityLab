@@ -1,6 +1,5 @@
 import java.io.*;
 import java.net.*;
-import java.util.Arrays;
 import java.util.Scanner;
 
 public class HillClient {
@@ -55,15 +54,16 @@ public class HillClient {
 
         int blockSize = 3;
         int no_of_blocks = message.length() / blockSize;
-        if(message.length() % 3 > 0) no_of_blocks++;
+        if (message.length() % 3 > 0)
+            no_of_blocks++;
 
         int[][][] messageVector = new int[no_of_blocks][3][1];
 
-        for(int block=0;block<no_of_blocks;block++){
+        for (int block = 0; block < no_of_blocks; block++) {
             for (int i = 0; i < blockSize; i++) {
                 int curIndex = i + block * blockSize;
                 int c;
-                if(curIndex < message.length())
+                if (curIndex < message.length())
                     c = (message.charAt(curIndex)) % 65;
                 else
                     c = '/';
@@ -75,7 +75,7 @@ public class HillClient {
 
         StringBuilder res = new StringBuilder();
 
-        for(int i=0;i<no_of_blocks;i++) {
+        for (int i = 0; i < no_of_blocks; i++) {
             encrypt(cipherMatrix, keyMatrix, messageVector[i]);
             for (int j = 0; j < 3; j++)
                 res.append((char) (cipherMatrix[j][0] + 65));

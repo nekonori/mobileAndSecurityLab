@@ -119,17 +119,18 @@ public class HillServer {
 
         int blockSize = 3;
         int no_of_blocks = message.length() / blockSize;
-        if(message.length() % 3 > 0) no_of_blocks++;
+        if (message.length() % 3 > 0)
+            no_of_blocks++;
 
         int[][][] cipherMatrix = new int[no_of_blocks][3][1];
 
         StringBuilder plainText = new StringBuilder();
 
-        for(int block=0;block<no_of_blocks;block++) {
+        for (int block = 0; block < no_of_blocks; block++) {
             for (int i = 0; i < blockSize; i++) {
                 int curIndex = i + block * blockSize;
                 int c;
-                if(curIndex < message.length())
+                if (curIndex < message.length())
                     c = (message.charAt(curIndex)) % 65;
                 else
                     c = ' ';
