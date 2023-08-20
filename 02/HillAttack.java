@@ -1,90 +1,234 @@
-import java.util.Arrays;
+import java.io.IOException;
 
 public class HillAttack {
-    public static void main(String[] args) {
-        attackHillCipher("MAA", "CAT");
+    int keymatrix[][];
+    int linematrix[];
+    int resultmatrix[];
+    String toSend;
+
+    public void divide(String temp, int s) {
+        toSend = "";
+        while (temp.length() > s) {
+            String sub = temp.substring(0, s);
+            temp = temp.substring(s, temp.length());
+            perform(sub);
+        }
+        if (temp.length() == s)
+            perform(temp);
+        else if (temp.length() < s) {
+            for (int i = temp.length(); i < s; i++)
+                temp = temp + 'x';
+            perform(temp);
+        }
     }
 
-    static void getKeyMatrix(String key, int keyMatrix[][]) {
-        int k = 0;
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                keyMatrix[i][j] = (key.charAt(k)) % 65;
-                k++;
+    public void perform(String line) {
+        linetomatrix(line);
+        linemultiplykey(line.length());
+        result(line.length());
+    }
+
+    public void keytomatrix(String key, int len) {
+        keymatrix = new int[len][len];
+        int c = 0;
+        for (int i = 0; i < len; i++) {
+            for (int j = 0; j < len; j++) {
+                keymatrix[i][j] = ((int) key.charAt(c)) - 97;
+                c++;
             }
         }
     }
 
-    static void encrypt(int cipherMatrix[][],
-            int keyMatrix[][],
-            int messageVector[][]) {
-        int x, i, j;
-        for (i = 0; i < 3; i++) {
-            for (j = 0; j < 1; j++) {
-                cipherMatrix[i][j] = 0;
-                for (x = 0; x < 3; x++) {
-                    cipherMatrix[i][j] += keyMatrix[i][x] * messageVector[x][j];
+    public void linetomatrix(String line) {
+        linematrix = new int[line.length()];
+        for (int i = 0; i < line.length(); i++) {
+            linematrix[i] = ((int) line.charAt(i)) - 97;
+        }
+    }
+
+    public void linemultiplykey(int len) {
+        resultmatrix = new int[len];
+        for (int i = 0; i < len; i++) {
+            for (int j = 0; j < len; j++) {
+                resultmatrix[i] += keymatrix[i][j] * linematrix[j];
+            }
+            resultmatrix[i] %= 26;
+        }
+    }
+
+    public void result(int len) {
+        String result = "";
+        for (int i = 0; i < len; i++) {
+            result += (char) (resultmatrix[i] + 97);
+        }
+        toSend = toSend + result;
+        System.out.print(result);
+    }
+
+    public boolean check(String key, int len) {
+        keytomatrix(key, len);
+        int d = determinant(keymatrix, len);
+        d = d % 26;
+        if (d == 0) {
+            // System.out
+            // .println("Invalid key!!! Key is not invertible because determinant=0...");
+            return false;
+        } else if (d % 2 == 0 || d % 13 == 0) {
+            // System.out
+            // .println("Invalid key!!! Key is not invertible because determinant has common
+            // factor with 26...");
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    public int determinant(int A[][], int N) {
+        int res;
+        if (N == 1)
+            res = A[0][0];
+        else if (N == 2) {
+            res = A[0][0] * A[1][1] - A[1][0] * A[0][1];
+        } else {
+            res = 0;
+            for (int j1 = 0; j1 < N; j1++) {
+                int m[][] = new int[N - 1][N - 1];
+                for (int i = 1; i < N; i++) {
+                    int j2 = 0;
+                    for (int j = 0; j < N; j++) {
+                        if (j == j1)
+                            continue;
+                        m[i - 1][j2] = A[i][j];
+                        j2++;
+                    }
                 }
-                cipherMatrix[i][j] = cipherMatrix[i][j] % 26;
+                res += Math.pow(-1.0, 1.0 + j1 + 1.0) * A[0][j1]
+                        * determinant(m, N - 1);
             }
         }
+        return res;
     }
 
-    static void attackHillCipher(String cipherText, String realPlainText) {
+    public void cofact(int num[][], int f) {
+        int b[][], fac[][];
+        b = new int[f][f];
+        fac = new int[f][f];
+        int p, q, m, n, i, j;
+        for (q = 0; q < f; q++) {
+            for (p = 0; p < f; p++) {
+                m = 0;
+                n = 0;
+                for (i = 0; i < f; i++) {
+                    for (j = 0; j < f; j++) {
+                        b[i][j] = 0;
+                        if (i != q && j != p) {
+                            b[m][n] = num[i][j];
+                            if (n < (f - 2))
+                                n++;
+                            else {
+                                n = 0;
+                                m++;
+                            }
+                        }
+                    }
+                }
+                fac[q][p] = (int) Math.pow(-1, q + p) * determinant(b, f - 1);
+            }
+        }
+        trans(fac, f);
+    }
 
-        int stringLength = 9;
-        char[] charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
+    void trans(int fac[][], int r) {
+        int i, j;
+        int b[][], inv[][];
+        b = new int[r][r];
+        inv = new int[r][r];
+        int d = determinant(keymatrix, r);
+        int mi = mi(d % 26);
+        mi %= 26;
+        if (mi < 0)
+            mi += 26;
+        for (i = 0; i < r; i++) {
+            for (j = 0; j < r; j++) {
+                b[i][j] = fac[j][i];
+            }
+        }
+        for (i = 0; i < r; i++) {
+            for (j = 0; j < r; j++) {
+                inv[i][j] = b[i][j] % 26;
+                if (inv[i][j] < 0)
+                    inv[i][j] += 26;
+                inv[i][j] *= mi;
+                inv[i][j] %= 26;
+            }
+        }
+        // System.out.println("\nInverse key:");
+        matrixtoinvkey(inv, r);
+    }
+
+    public int mi(int d) {
+        int q, r1, r2, r, t1, t2, t;
+        r1 = 26;
+        r2 = d;
+        t1 = 0;
+        t2 = 1;
+        while (r1 != 1 && r2 != 0) {
+            q = r1 / r2;
+            r = r1 % r2;
+            t = t1 - (t2 * q);
+            r1 = r2;
+            r2 = r;
+            t1 = t2;
+            t2 = t;
+        }
+        return (t1 + t2);
+    }
+
+    public void matrixtoinvkey(int inv[][], int n) {
+        String invkey = "";
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                invkey += (char) (inv[i][j] + 97);
+            }
+        }
+        // System.out.print(invkey);
+    }
+
+    public static void main(String args[]) throws IOException {
+        HillAttack obj = new HillAttack();
+        String plainText = "apples";
+        String encryptedText = "wttauo";
+
+        int stringLength = 4;
+        char[] charset = "abcdefghijklmnopqrstuvwxyz".toCharArray();
 
         int totalCombinations = (int) Math.pow(charset.length, stringLength);
 
-        for (int curComb = 0; curComb < totalCombinations; curComb++) {
+        for (int i = 0; i < totalCombinations; i++) {
             StringBuilder sb = new StringBuilder();
-            int index = curComb;
+            int index = i;
 
             for (int j = 0; j < stringLength; j++) {
                 sb.append(charset[index % charset.length]);
                 index /= charset.length;
             }
 
-            System.out.println("Trying key: " + sb.toString());
+            String key = sb.toString();
+            double sq = Math.sqrt(key.length());
 
-            int[][] keyMatrix = new int[3][3];
-            getKeyMatrix(sb.toString(), keyMatrix);
+            System.out.println(sb.toString());
 
-            int blockSize = 3;
-            int no_of_blocks = realPlainText.length() / blockSize;
-            if (realPlainText.length() % 3 > 0)
-                no_of_blocks++;
-
-            int[][][] messageVector = new int[no_of_blocks][3][1];
-
-            for (int block = 0; block < no_of_blocks; block++) {
-                for (int i = 0; i < blockSize; i++) {
-                    int curIndex = i + block * blockSize;
-                    int c;
-                    if (curIndex < realPlainText.length())
-                        c = (realPlainText.charAt(curIndex)) % 65;
-                    else
-                        c = '/';
-                    messageVector[block][i][0] = c;
+            int s = (int) sq;
+            if (obj.check(key, s)) {
+                System.out.println("Result:");
+                obj.divide(plainText, s);
+                obj.cofact(obj.keymatrix, s);
+                if (obj.toSend.equals(encryptedText)) {
+                    System.out.println("\n\nKey: " + key);
+                    System.out.println("Plaintext: " + plainText);
+                    System.out.println("Encrypted text: " + encryptedText);
+                    break;
                 }
-            }
-
-            int[][] cipherMatrix = new int[3][1];
-
-            StringBuilder res = new StringBuilder();
-
-            for (int i = 0; i < no_of_blocks; i++) {
-                encrypt(cipherMatrix, keyMatrix, messageVector[i]);
-                for (int j = 0; j < 3; j++)
-                    res.append((char) (cipherMatrix[j][0] + 65));
-            }
-
-            if (res.toString().equals(cipherText)) {
-                System.out.println("Found key: " + sb.toString());
-                System.out.println("plainText: " + realPlainText);
-                System.out.println("cipherText: " + res.toString());
-                return;
             }
         }
     }
