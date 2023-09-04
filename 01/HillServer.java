@@ -160,6 +160,7 @@ public class HillServer {
                 inv[i][j] %= 26;
             }
         }
+        keymatrix = inv;
         // System.out.println("\nInverse key:");
         matrixtoinvkey(inv, r);
     }
@@ -189,7 +190,7 @@ public class HillServer {
                 invkey += (char) (inv[i][j] + 97);
             }
         }
-        // System.out.print(invkey);
+//         System.out.print(invkey);
     }
 
     public static void main(String[] args) throws Exception {
@@ -203,7 +204,7 @@ public class HillServer {
         while (!ipStr.equals("stop")) {
             ipStr = in.readLine();
             System.out.println("Message from client: " + ipStr);
-            String key = "jgrd";
+            String key = "bydd";
             double sq = Math.sqrt(key.length());
             if (sq != (long) sq)
                 System.out
@@ -212,8 +213,8 @@ public class HillServer {
                 int s = (int) sq;
                 if (obj.check(key, s)) {
                     System.out.print("Decrypted message: ");
-                    obj.divide(ipStr, s);
                     obj.cofact(obj.keymatrix, s);
+                    obj.divide(ipStr, s);
                 }
             }
         }

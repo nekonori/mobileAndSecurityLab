@@ -192,7 +192,7 @@ public class HillClient {
                 invkey += (char) (inv[i][j] + 97);
             }
         }
-        // System.out.print(invkey);
+//         System.out.print(invkey);
     }
 
     public static void main(String[] args) throws Exception {
@@ -213,9 +213,7 @@ public class HillClient {
             else {
                 int s = (int) sq;
                 if (obj.check(key, s)) {
-                    // System.out.println("Result:");
                     obj.divide(opStr, s);
-                    obj.cofact(obj.keymatrix, s);
                     System.out.println("Sending encrypted msg: " + obj.toSend);
                     out.println(obj.toSend);
                 }
